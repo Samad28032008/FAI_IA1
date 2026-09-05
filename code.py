@@ -2,6 +2,7 @@ import datetime
 import wikipedia
 import os
 import webbrowser
+import random
 
 # ==========================================
 # 3. ACT: The Action Functions
@@ -43,14 +44,11 @@ def search_info(user_input):
         print("Assistant: Sorry, I couldn't find any clear information on that.")
 
 def open_website(user_input):
-    # Remove the word "open" to find the target website
     site_name = user_input.replace("open", "").strip()
-    
     if site_name == "":
         print("Assistant: Please tell me which website to open, like 'open youtube'.")
         return
         
-    # Smart routing: check if the user included ".com" or ".org"
     if "." not in site_name:
         url = f"https://www.{site_name}.com"
     else:
@@ -59,8 +57,18 @@ def open_website(user_input):
     print(f"Assistant: Opening {site_name} in your web browser...")
     webbrowser.open(url)
 
+def flip_coin():
+    # Randomly chooses between the items in the list
+    outcome = random.choice(["Heads", "Tails"])
+    print(f"Assistant: I flipped a coin... It landed on {outcome}!")
+
+def roll_die():
+    # Randomly generates a number from 1 to 6
+    outcome = random.randint(1, 6)
+    print(f"Assistant: I rolled a die... You got a {outcome}!")
+
 def fallback():
-    print("Assistant: I didn't understand that. You can ask me for the time, save a note, do math, search for info, or open a website.")
+    print("Assistant: I didn't understand that. You can ask for the time, save a note, do math, search info, open a website, flip a coin, or roll a die.")
 
 # ==========================================
 # 2. DECIDE: The Intent Router
@@ -81,6 +89,10 @@ def decide_and_act(user_input):
         search_info(text)
     elif "open" in text:
         open_website(text)
+    elif "flip" in text or "coin" in text:
+        flip_coin()
+    elif "roll" in text or "dice" in text or "die" in text:
+        roll_die()
     else:
         fallback()
 
