@@ -2,7 +2,7 @@
 
 A lightweight, text-based intelligent personal assistant built entirely in Python. This project demonstrates the foundational architecture of an AI agent using a continuous **Perceive → Decide → Act** loop. It handles everyday tasks, persists data to the local file system, and routes user intents to specific actions.
 
-## 🚀 Features
+##  Features
 
 *   **Information Lookup:** Searches Wikipedia for quick summaries ("who is...", "what is...").
 *   **Persistent Notes:** Saves and retrieves personal notes/reminders using local file I/O.
@@ -13,12 +13,12 @@ A lightweight, text-based intelligent personal assistant built entirely in Pytho
 *   **Personality Module:** Tells programming jokes and shares inspirational quotes.
 *   **Fallback Handling:** Gracefully handles unrecognized intents.
 
-## 🛠️ Prerequisites
+##  Prerequisites
 
 *   Python 3.x installed on your machine.
 *   An active internet connection (for Wikipedia and Web Browser features).
 
-## 📦 Installation
+## Installation
 
 1. Clone this repository to your local machine:
    ```bash
