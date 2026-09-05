@@ -58,17 +58,33 @@ def open_website(user_input):
     webbrowser.open(url)
 
 def flip_coin():
-    # Randomly chooses between the items in the list
     outcome = random.choice(["Heads", "Tails"])
     print(f"Assistant: I flipped a coin... It landed on {outcome}!")
 
 def roll_die():
-    # Randomly generates a number from 1 to 6
     outcome = random.randint(1, 6)
     print(f"Assistant: I rolled a die... You got a {outcome}!")
 
+def tell_joke():
+    jokes = [
+        "Why do programmers prefer dark mode? Because light attracts bugs!",
+        "There are 10 types of people in the world: those who understand binary, and those who don't.",
+        "Why did the Python programmer not respond? Because he was stuck in a while loop!",
+        "I told my computer I needed a break... now it won't stop sending me KitKat ads."
+    ]
+    print(f"Assistant: {random.choice(jokes)}")
+
+def give_quote():
+    quotes = [
+        "“The only way to do great work is to love what you do.” – Steve Jobs",
+        "“It does not matter how slowly you go as long as you do not stop.” – Confucius",
+        "“Code is like humor. When you have to explain it, it’s bad.” – Cory House",
+        "“First, solve the problem. Then, write the code.” – John Johnson"
+    ]
+    print(f"Assistant: {random.choice(quotes)}")
+
 def fallback():
-    print("Assistant: I didn't understand that. You can ask for the time, save a note, do math, search info, open a website, flip a coin, or roll a die.")
+    print("Assistant: I didn't understand that. You can ask for the time, save a note, do math, search info, open a website, flip a coin, tell a joke, or give a quote.")
 
 # ==========================================
 # 2. DECIDE: The Intent Router
@@ -93,6 +109,10 @@ def decide_and_act(user_input):
         flip_coin()
     elif "roll" in text or "dice" in text or "die" in text:
         roll_die()
+    elif "joke" in text or "funny" in text:
+        tell_joke()
+    elif "quote" in text or "inspire" in text:
+        give_quote()
     else:
         fallback()
 
