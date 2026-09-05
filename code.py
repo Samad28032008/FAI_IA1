@@ -1,6 +1,7 @@
 import datetime
 import wikipedia
 import os
+import webbrowser
 
 # ==========================================
 # 3. ACT: The Action Functions
@@ -11,10 +12,7 @@ def get_time():
     print(f"Assistant: The current date and time is {now.strftime('%Y-%m-%d %H:%M:%S')}")
 
 def save_note(user_input):
-    # Remove the trigger word to just save the note content
     note_content = user_input.replace("note", "").replace("remember", "").strip()
-    
-    # Open a text file in "append" mode (creates it if it doesn't exist)
     with open("my_notes.txt", "a") as file:
         file.write(note_content + "\n")
     print(f"Assistant: Got it. I saved '{note_content}' to your notes.")
@@ -28,35 +26,47 @@ def read_notes():
         print("Assistant: You don't have any saved notes yet.")
 
 def calculate(user_input):
-    # Keep only numbers and math symbols
     math_equation = ''.join(char for char in user_input if char in '0123456789+-*/().')
     try:
-        # eval() safely solves basic math strings like "5+5"
         result = eval(math_equation)
         print(f"Assistant: The answer is {result}")
     except:
         print("Assistant: Sorry, I couldn't understand the math equation.")
 
 def search_info(user_input):
-    # Clean up the search query
     query = user_input.replace("search", "").replace("who is", "").replace("what is", "").strip()
     print(f"Assistant: Looking up '{query}'...")
     try:
-        # Get a short 2-sentence summary from Wikipedia
         summary = wikipedia.summary(query, sentences=2)
         print(f"Assistant: {summary}")
     except:
         print("Assistant: Sorry, I couldn't find any clear information on that.")
 
+def open_website(user_input):
+    # Remove the word "open" to find the target website
+    site_name = user_input.replace("open", "").strip()
+    
+    if site_name == "":
+        print("Assistant: Please tell me which website to open, like 'open youtube'.")
+        return
+        
+    # Smart routing: check if the user included ".com" or ".org"
+    if "." not in site_name:
+        url = f"https://www.{site_name}.com"
+    else:
+        url = f"https://{site_name}"
+        
+    print(f"Assistant: Opening {site_name} in your web browser...")
+    webbrowser.open(url)
+
 def fallback():
-    print("Assistant: I didn't understand that. You can ask me for the time, to save a note, do math, or search for info.")
+    print("Assistant: I didn't understand that. You can ask me for the time, save a note, do math, search for info, or open a website.")
 
 # ==========================================
 # 2. DECIDE: The Intent Router
 # ==========================================
 
 def decide_and_act(user_input):
-    # Convert input to lowercase to make keyword matching easier
     text = user_input.lower()
     
     if "time" in text or "date" in text:
@@ -69,23 +79,24 @@ def decide_and_act(user_input):
         calculate(text)
     elif "search" in text or "who is" in text or "what is" in text:
         search_info(text)
+    elif "open" in text:
+        open_website(text)
     else:
         fallback()
 
 # ==========================================
-# 1. PERCEIVE: The Agent Loop
+# 1. PERCEIVE: The Agent Loop (Text Input)
 # ==========================================
 
 print("Assistant: Hello! I am online. Type 'quit' to exit.")
 
 while True:
-    # Perceive: Listen for user input
+    # Perceive: Read typed input from the user
     user_input = input("\nYou: ")
     
-    # Check if the user wants to exit the loop
     if user_input.lower() in ["exit", "quit", "stop"]:
         print("Assistant: Goodbye!")
         break
     
-    # Send the perceived input to the brain (Decide & Act)
+    # Send the perceived input to the brain
     decide_and_act(user_input)
