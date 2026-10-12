@@ -83,8 +83,21 @@ def give_quote():
     ]
     print(f"Assistant: {random.choice(quotes)}")
 
-def fallback():
-    print("Assistant: I didn't understand that. You can ask for the time, save a note, do math, search info, open a website, flip a coin, tell a joke, or give a quote.")
+# --- NEW STEP 1 FEATURES ---
+
+def forget_data():
+    """Deletes the stored notes file."""
+    if os.path.exists("my_notes.txt"):
+        os.remove("my_notes.txt")
+        print("Assistant: All your stored notes have been securely deleted.")
+    else:
+        print("Assistant: You have no stored data to delete.")
+
+def log_unanswered(user_input):
+    """Logs unrecognized queries for future improvement."""
+    with open("unanswered_queries.log", "a") as file:
+        file.write(f"{datetime.datetime.now()}: {user_input}\n")
+    print("Assistant: I didn't understand that. I've logged this query to improve my future training.")
 
 # ==========================================
 # 2. DECIDE: The Intent Router
@@ -113,8 +126,12 @@ def decide_and_act(user_input):
         tell_joke()
     elif "quote" in text or "inspire" in text:
         give_quote()
+    # --- NEW STEP 1 ROUTING ---
+    elif "forget my data" in text or "delete my notes" in text:
+        forget_data()
     else:
-        fallback()
+        # Replaced fallback() with logging
+        log_unanswered(user_input)
 
 # ==========================================
 # 1. PERCEIVE: The Agent Loop (Text Input)
