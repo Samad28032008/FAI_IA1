@@ -4,6 +4,9 @@ import os
 import webbrowser
 import random
 
+# Global variable for Explainable AI (Step 4)
+last_trace = "No actions taken yet."
+
 # ==========================================
 # 3. ACT: The Action Functions
 # ==========================================
@@ -13,7 +16,7 @@ def get_time():
     print(f"Assistant: The current date and time is {now.strftime('%Y-%m-%d %H:%M:%S')}")
 
 def save_note(user_input):
-    note_content = user_input.replace("note", "").replace("remember", "").strip()
+    note_content = user_input.replace("note", "").replace("remember", "").replace("save", "").strip()
     with open("my_notes.txt", "a") as file:
         file.write(note_content + "\n")
     print(f"Assistant: Got it. I saved '{note_content}' to your notes.")
@@ -44,7 +47,7 @@ def search_info(user_input):
         print("Assistant: Sorry, I couldn't find any clear information on that.")
 
 def open_website(user_input):
-    site_name = user_input.replace("open", "").strip()
+    site_name = user_input.replace("open", "").replace("website", "").strip()
     if site_name == "":
         print("Assistant: Please tell me which website to open, like 'open youtube'.")
         return
@@ -83,8 +86,6 @@ def give_quote():
     ]
     print(f"Assistant: {random.choice(quotes)}")
 
-# --- NEW STEP 1 FEATURES ---
-
 def forget_data():
     """Deletes the stored notes file."""
     if os.path.exists("my_notes.txt"):
@@ -100,52 +101,94 @@ def log_unanswered(user_input):
     print("Assistant: I didn't understand that. I've logged this query to improve my future training.")
 
 # ==========================================
-# 2. DECIDE: The Intent Router
+# 2.A KNOWLEDGE & REASONING LAYER
+# ==========================================
+
+# The Rule Base (Propositional Logic Simulation)
+RULES = [
+    (["time", "date", "clock"], "check_time"),
+    (["show notes", "read notes", "what are my notes"], "read_notes"),
+    (["note", "remember", "save"], "save_note"),
+    (["calculate", "math", "+", "-", "*", "/"], "math"),
+    (["search", "who is", "what is"], "search"),
+    (["open", "website", "www", ".com"], "open_web"),
+    (["flip", "coin"], "flip_coin"),
+    (["roll", "dice", "die"], "roll_die"),
+    (["joke", "funny", "laugh"], "joke"),
+    (["quote", "inspire", "wisdom"], "quote"),
+    (["forget", "delete data", "erase"], "forget_data")
+]
+
+def forward_chaining_inference(user_input):
+    """
+    Inference Engine: Matches facts from user input against the Rule Base.
+    Returns the inferred intent, confidence score, and the rule trace.
+    """
+    text = user_input.lower()
+    best_intent = "unknown"
+    highest_confidence = 0.0
+    trace = "No rules matched."
+    
+    for conditions, intent in RULES:
+        matches = [condition for condition in conditions if condition in text]
+        match_count = len(matches)
+        
+        if match_count > 0:
+            confidence = 0.6 if match_count == 1 else 1.0
+            
+            if confidence > highest_confidence:
+                highest_confidence = confidence
+                best_intent = intent
+                trace = f"Rule matched: IF {matches} THEN Intent = {intent} (Confidence: {confidence*100}%)"
+                
+    return best_intent, highest_confidence, trace
+
+# ==========================================
+# 2.B DECIDE: The Smart Intent Router
 # ==========================================
 
 def decide_and_act(user_input):
-    text = user_input.lower()
+    global last_trace
     
-    if "time" in text or "date" in text:
-        get_time()
-    elif "show notes" in text or "read notes" in text:
-        read_notes()
-    elif "note" in text or "remember" in text:
-        save_note(text)
-    elif "calculate" in text or "math" in text:
-        calculate(text)
-    elif "search" in text or "who is" in text or "what is" in text:
-        search_info(text)
-    elif "open" in text:
-        open_website(text)
-    elif "flip" in text or "coin" in text:
-        flip_coin()
-    elif "roll" in text or "dice" in text or "die" in text:
-        roll_die()
-    elif "joke" in text or "funny" in text:
-        tell_joke()
-    elif "quote" in text or "inspire" in text:
-        give_quote()
-    # --- NEW STEP 1 ROUTING ---
-    elif "forget my data" in text or "delete my notes" in text:
-        forget_data()
-    else:
-        # Replaced fallback() with logging
+    # 1. Run the inference engine
+    intent, confidence, trace = forward_chaining_inference(user_input)
+    last_trace = trace
+    
+    if intent == "unknown":
         log_unanswered(user_input)
+        return
+        
+    # 2. Check Confidence Threshold (70%)
+    if confidence < 0.7:
+        clarification = input(f"Assistant: I am only {confidence*100}% sure. Did you mean to '{intent}'? (yes/no): ")
+        if "y" not in clarification.lower():
+            print("Assistant: Okay, cancelling action. Please try rephrasing.")
+            return
+
+    # 3. Act based on the inferred intent
+    if intent == "check_time": get_time()
+    elif intent == "read_notes": read_notes()
+    elif intent == "save_note": save_note(user_input)
+    elif intent == "math": calculate(user_input)
+    elif intent == "search": search_info(user_input)
+    elif intent == "open_web": open_website(user_input)
+    elif intent == "flip_coin": flip_coin()
+    elif intent == "roll_die": roll_die()
+    elif intent == "joke": tell_joke()
+    elif intent == "quote": give_quote()
+    elif intent == "forget_data": forget_data()
 
 # ==========================================
-# 1. PERCEIVE: The Agent Loop (Text Input)
+# 1. PERCEIVE: The Agent Loop
 # ==========================================
 
 print("Assistant: Hello! I am online. Type 'quit' to exit.")
 
 while True:
-    # Perceive: Read typed input from the user
     user_input = input("\nYou: ")
     
     if user_input.lower() in ["exit", "quit", "stop"]:
         print("Assistant: Goodbye!")
         break
     
-    # Send the perceived input to the brain
     decide_and_act(user_input)
