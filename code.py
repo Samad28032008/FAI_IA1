@@ -116,7 +116,8 @@ RULES = [
     (["roll", "dice", "die"], "roll_die"),
     (["joke", "funny", "laugh"], "joke"),
     (["quote", "inspire", "wisdom"], "quote"),
-    (["forget", "delete data", "erase"], "forget_data")
+    (["forget", "delete data", "erase"], "forget_data"),
+    (["plan", "schedule", "my day"], "plan_day") # Added for CSP Layer
 ]
 
 def forward_chaining_inference(user_input):
@@ -142,6 +143,82 @@ def forward_chaining_inference(user_input):
                 trace = f"Rule matched: IF {matches} THEN Intent = {intent} (Confidence: {confidence*100}%)"
                 
     return best_intent, highest_confidence, trace
+
+# ==========================================
+# 2.A.1 CSP LAYER (Constraint Satisfaction)
+# ==========================================
+
+class DayPlannerCSP:
+    def __init__(self, tasks):
+        self.variables = tasks
+        # Domain: Working hours from 9 AM to 5 PM (17:00)
+        self.time_slots = [9, 10, 11, 12, 13, 14, 15, 16, 17] 
+        self.domains = {task: self.time_slots[:] for task in tasks}
+        
+        # Constraint: Fixed Break (Lunch must be at 12 or 13)
+        # Using case-insensitive check for robustness
+        lunch_task = next((t for t in tasks if t.lower() == "lunch"), None)
+        if lunch_task:
+            self.domains[lunch_task] = [t for t in self.domains[lunch_task] if t in [12, 13]]
+
+    def is_consistent(self, task, time, assignment):
+        # Constraint: No overlap allowed
+        if time in assignment.values():
+            return False
+        return True
+
+    def solve_forward_checking(self, assignment, domains):
+        """Backtracking + Forward Checking for faster solving"""
+        if len(assignment) == len(self.variables):
+            return assignment
+        
+        unassigned = [v for v in self.variables if v not in assignment][0]
+        for value in domains[unassigned]:
+            if self.is_consistent(unassigned, value, assignment):
+                assignment[unassigned] = value
+                
+                # Forward checking: remove this time slot from future domains
+                local_domains = {k: v[:] for k, v in domains.items()}
+                possible = True
+                for other in self.variables:
+                    if other not in assignment:
+                        if value in local_domains[other]:
+                            local_domains[other].remove(value)
+                        if not local_domains[other]: # A domain became empty! Conflict!
+                            possible = False
+                            break
+                
+                if possible:
+                    result = self.solve_forward_checking(assignment, local_domains)
+                    if result:
+                        return result
+                del assignment[unassigned]
+        return None
+
+def plan_my_day():
+    print("Assistant: Let's plan your day. Enter tasks separated by commas (e.g., 'Meeting, Coding, Lunch, Emails').")
+    tasks_input = input("Tasks: ")
+    tasks = [t.strip() for t in tasks_input.split(",") if t.strip()]
+    
+    if len(tasks) > 9:
+        print("Assistant: Error! Conflicting constraints. You have more tasks than available working hours (9 slots). No schedule exists.")
+        return
+
+    csp = DayPlannerCSP(tasks)
+    
+    print("\n--- Solving with Backtracking + Forward Checking ---")
+    schedule = csp.solve_forward_checking({}, csp.domains)
+    
+    if schedule:
+        print("Assistant: Here is your conflict-free schedule:")
+        # Sort schedule chronologically before printing
+        sorted_schedule = sorted(schedule.items(), key=lambda item: item[1])
+        for task, time in sorted_schedule:
+            am_pm = "AM" if time < 12 else "PM"
+            display_time = time if time <= 12 else time - 12
+            print(f" - {display_time}:00 {am_pm} : {task}")
+    else:
+        print("Assistant: I could not find a valid schedule. Constraints conflict.")
 
 # ==========================================
 # 2.B DECIDE: The Smart Intent Router
@@ -177,6 +254,7 @@ def decide_and_act(user_input):
     elif intent == "joke": tell_joke()
     elif intent == "quote": give_quote()
     elif intent == "forget_data": forget_data()
+    elif intent == "plan_day": plan_my_day()
 
 # ==========================================
 # 1. PERCEIVE: The Agent Loop
